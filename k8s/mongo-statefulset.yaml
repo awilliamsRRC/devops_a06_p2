@@ -1,0 +1,53 @@
+apiVersion: apps/v1                 # using the apps/v1 API since StatefulSet is part of the apps group
+kind: StatefulSet                   # this defines a StatefulSet resource (used for stateful apps like databases)
+metadata:
+  name: mongo                       # naming the StatefulSet 'mongo'
+  labels:
+    app: mongo                      # adding a label 'app=mongo' so services can select these pods
+spec:
+  serviceName: mongo                # headless service name for stable network IDs
+  replicas: 1                       # starting with a single replica (one MongoDB pod)
+  revisionHistoryLimit: 2           # keeps history of 2 revisions for rollback
+  selector:
+    matchLabels:
+      app: mongo                    # ensures this StatefulSet manages pods with label 'app=mongo'
+  template:
+    metadata:
+      labels:
+        app: mongo                  # labeling the pod template with 'app=mongo'
+    spec:
+      containers:
+        - name: mongo               # naming the container 'mongo'
+          image: mongo:4.4.18       # using the official MongoDB image version 4.4.18
+          args: ["--bind_ip_all"]   # allows MongoDB to accept connections from all IP addresses
+          ports:
+            - name: mongo           # naming the port 'mongo'
+              containerPort: 27017  # exposing port 27017 inside the container
+          livenessProbe:            # probe to check if the pod is still healthy
+            tcpSocket:
+              port: 27017           # checking TCP connectivity on port 27017
+            initialDelaySeconds: 20 # wait 20s before first check
+            periodSeconds: 10       # check every 10s
+          readinessProbe:           # probe to check if the pod is ready to serve traffic
+            tcpSocket:
+              port: 27017           # checking TCP connectivity on port 27017
+            initialDelaySeconds: 10 # wait 10s before first check
+            periodSeconds: 5        # check every 5s
+          resources:                # resource requests and limits
+            requests:
+              cpu: "100m"           # requests 0.1 CPU
+              memory: "256Mi"       # requests 256Mi memory
+            limits:
+              cpu: "500m"           # limits to 0.5 CPU
+              memory: "1Gi"         # limits to 1Gi memory
+          volumeMounts:
+            - name: mongo-data      # name of the volume claim
+              mountPath: /data/db   # mount path inside the container (MongoDB default data dir)
+  volumeClaimTemplates:             # defines persistent storage for each pod
+    - metadata:
+        name: mongo-data            # PVC name 'mongo-data'
+      spec:
+        accessModes: ["ReadWriteOnce"] # only one node can mount at a time
+        resources:
+          requests:
+            storage: 2Gi            # requesting 2Gi of persistent storage

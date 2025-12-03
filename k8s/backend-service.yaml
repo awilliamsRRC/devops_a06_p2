@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend                 # service must be named 'backend'
+  labels:
+    app: backend                # label 'app=backend'
+spec:
+  type: ClusterIP               # internal-only service
+  selector:
+    app: backend                # routes traffic to pods with label 'app=backend'
+  ports:
+    - name: http                # naming the port 'http'
+      port: 5000                # service exposes port 5000
+      targetPort: http          # forwards traffic to container's named port 'http' (5000)

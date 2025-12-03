@@ -1,0 +1,18 @@
+apiVersion: autoscaling/v2          # must use autoscaling/v2 API version
+kind: HorizontalPodAutoscaler       # defines an HPA resource
+metadata:
+  name: transactions-hpa            # HPA must be named 'transactions-hpa'
+spec:
+  scaleTargetRef:                   # reference to the workload this HPA manages
+    apiVersion: apps/v1             # target workload API version
+    kind: Deployment                # target workload kind
+    name: transactions              # target workload name
+  minReplicas: 2                    # minimum number of replicas
+  maxReplicas: 8                    # maximum number of replicas
+  metrics:                          # metrics array with a single metric
+    - type: Resource                # metric type must be Resource
+      resource:
+        name: cpu                   # target the CPU resource
+        target:
+          type: Utilization         # target type must be Utilization
+          averageUtilization: 70    # maintain average CPU utilization at 70%

@@ -1,0 +1,51 @@
+apiVersion: apps/v1                 # apps/v1 API since Deployment is part of the apps group
+kind: Deployment                    # defines a Deployment resource (stateless application)
+metadata:
+  name: nginx                       # Deployment must be named 'nginx'
+  labels:
+    app: nginx                      # label 'app=nginx' so services can select these pods
+spec:
+  replicas: 2                       # run 2 replicas for high availability
+  revisionHistoryLimit: 2           # keep 2 old ReplicaSets for rollback
+  selector:
+    matchLabels:
+      app: nginx                    # this Deployment manages pods with label 'app=nginx'
+  template:
+    metadata:
+      labels:
+        app: nginx                  # pod template labeled 'app=nginx'
+    spec:
+      containers:
+        - name: nginx               # container name 'nginx'
+          image: nginx:alpine       # requirement says use 'nginx:alpine' image
+          imagePullPolicy: IfNotPresent # only pull if not already present
+          ports:
+            - containerPort: 80     # expose port 80
+              name: http            # name the port 'http'
+          volumeMounts:             # mount custom nginx.conf from ConfigMap
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf # mount at nginx.conf path
+              subPath: nginx.conf   # use only the nginx.conf file from ConfigMap
+          readinessProbe:           # probe to check if pod is ready to serve traffic
+            httpGet:
+              path: /               # check root path
+              port: http            # use the named port 'http' (80)
+            initialDelaySeconds: 3  # wait 3s before first readiness check
+            periodSeconds: 5        # check every 5s
+          livenessProbe:            # probe to check if pod is healthy
+            httpGet:
+              path: /               # check root path
+              port: http
+            initialDelaySeconds: 20 # wait 20s before first liveness check
+            periodSeconds: 10       # check every 10s
+          resources:                # resource requests and limits
+            requests:
+              cpu: "50m"            # requests 0.05 CPU
+              memory: "64Mi"        # requests 64Mi memory
+            limits:
+              cpu: "200m"           # limits to 0.2 CPU
+              memory: "256Mi"       # limits to 256Mi memory
+      volumes:                      # define volumes
+        - name: nginx-conf          # volume named 'nginx-conf'
+          configMap:
+            name: nginx-conf        # source data from ConfigMap named 'nginx-conf'

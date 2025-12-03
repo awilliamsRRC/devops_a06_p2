@@ -1,0 +1,43 @@
+apiVersion: apps/v1                 # using apps/v1 API since Deployment is part of the apps group
+kind: Deployment                    # defines a Deployment resource (stateless application)
+metadata:
+  name: studentportfolio            # Deployment must be named 'studentportfolio'
+  labels:
+    app: studentportfolio           # label 'app=studentportfolio' so services can select these pods
+spec:
+  replicas: 2                       # run 2 replicas for high availability and load distribution
+  revisionHistoryLimit: 2           # keep 2 old ReplicaSets for rollback
+  selector:
+    matchLabels:
+      app: studentportfolio         # this Deployment manages pods with label 'app=studentportfolio'
+  template:
+    metadata:
+      labels:
+        app: studentportfolio       # pod template labeled 'app=studentportfolio'
+    spec:
+      containers:
+        - name: studentportfolio    # container name 'studentportfolio'
+          image: studentportfolio:latest # requirement says use 'studentportfolio:latest' image
+          imagePullPolicy: Never    #force Kubernetes to use local image
+          ports:
+            - name: http            # naming the port 'http'
+              containerPort: 80     # exposing port 80 inside the container
+          readinessProbe:           # probe to check if pod is ready to serve traffic
+            httpGet:
+              path: /               # check root path
+              port: http            # use the named port 'http' (80)
+            initialDelaySeconds: 3  # wait 3s before first readiness check
+            periodSeconds: 5        # check every 5s
+          livenessProbe:            # probe to check if pod is healthy
+            httpGet:
+              path: /               # check root path
+              port: http
+            initialDelaySeconds: 20 # wait 20s before first liveness check
+            periodSeconds: 10       # check every 10s
+          resources:                # resource requests and limits
+            requests:
+              cpu: "50m"            # requests 0.05 CPU
+              memory: "64Mi"        # requests 64Mi memory
+            limits:
+              cpu: "200m"           # limits to 0.2 CPU
+              memory: "256Mi"       # limits to 256Mi memory

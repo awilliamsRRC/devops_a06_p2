@@ -1,0 +1,15 @@
+apiVersion: v1                # core API group for basic Kubernetes objects
+kind: Service                 # defines a Service resource
+metadata:
+  name: nginx                 # service must be named 'nginx'
+  labels:
+    app: nginx                # label 'app=nginx' for identification
+spec:
+  type: NodePort              # exposes service externally on each node's IP at a static port
+  selector:
+    app: nginx                # routes traffic to pods with label 'app=nginx'
+  ports:
+    - name: http              # naming the port 'http'
+      port: 80                # service exposes port 80
+      targetPort: http        # forwards traffic to container's named port 'http' (80)
+      nodePort: 30080         # explicitly expose NodePort 30080 on each node

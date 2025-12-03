@@ -1,0 +1,51 @@
+apiVersion: apps/v1                 # using apps/v1 API since Deployment is part of the apps group
+kind: Deployment                    # defines a Deployment resource (stateless application)
+metadata:
+  name: backend                     # Deployment must be named 'backend'
+  labels:
+    app: backend                    # label 'app=backend' so services can select these pods
+spec:
+  replicas: 3                       # run 3 replicas for high availability and load balancing
+  revisionHistoryLimit: 2           # keep 2 old ReplicaSets for rollback
+  selector:
+    matchLabels:
+      app: backend                  # this Deployment manages pods with label 'app=backend'
+  template:
+    metadata:
+      labels:
+        app: backend                # pod template labeled 'app=backend'
+    spec:
+      containers:
+        - name: backend             # container name 'backend'
+          image: backend:latest     # requirement says use 'backend:latest' image
+          imagePullPolicy: Never    # force Kubernetes to use local image
+          ports:
+            - name: http            # naming the port 'http'
+              containerPort: 5000   # exposing port 5000 inside the container
+          env:                      # environment variables for the container
+            - name: MONGO_URI
+              value: mongodb://mongo:27017/bank_app # connect to MongoDB service named 'mongo'
+            - name: SECRET_KEY
+              valueFrom:            # value comes from a Kubernetes Secret
+                secretKeyRef:
+                  name: backend-secret # reference to Secret named 'backend-secret'
+                  key: secret-key      # use the key 'secret-key' from that Secret
+          readinessProbe:           # probe to check if pod is ready to serve traffic
+            httpGet:
+              path: /               # requirement says check root path
+              port: http            # use the named port 'http' (5000)
+            initialDelaySeconds: 5  # wait 5s before first readiness check
+            periodSeconds: 5        # check every 5s
+          livenessProbe:            # probe to check if pod is healthy
+            httpGet:
+              path: /               # requirement says check root path
+              port: http
+            initialDelaySeconds: 20 # wait 20s before first liveness check
+            periodSeconds: 10       # check every 10s
+          resources:                # resource requests and limits
+            requests:
+              cpu: "100m"           # requests 0.1 CPU
+              memory: "128Mi"       # requests 128Mi memory
+            limits:
+              cpu: "500m"           # limits to 0.5 CPU
+              memory: "512Mi"       # limits to 512Mi memory

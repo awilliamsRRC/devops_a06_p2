@@ -1,0 +1,14 @@
+apiVersion: v1                # core API group for basic Kubernetes objects
+kind: Service                 # defines a Service resource
+metadata:
+  name: studentportfolio      # service must be named 'studentportfolio'
+  labels:
+    app: studentportfolio     # label 'app=studentportfolio' for identification
+spec:
+  type: ClusterIP             # restricts access to internal cluster network only
+  selector:
+    app: studentportfolio     # routes traffic to pods with label 'app=studentportfolio'
+  ports:
+    - name: http              # naming the port 'http'
+      port: 80                # service exposes port 80 inside the cluster
+      targetPort: http        # forwards traffic to the container's named port 'http' (80)
